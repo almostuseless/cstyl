@@ -133,17 +133,16 @@ module Style
 
     ### Style.create_records( string array buckets, string thread_pool_size )
     ### Returns list of type Record (at some point)
-    def self.create_records( buckets, pool_size = 3 )
+    def self.create_records( buckets, pool_size = 1 )
 
         threads     = Array.new()
 
         buckets.each do |b|
 
-            until threads.map { |t| t.status }.count("run") < pool_size do sleep 2 end
+            until threads.map { |t| t.status }.count("run") < pool_size do sleep 5 end
 
             threads << Thread.new() {
                 print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
-                sleep( "0.#{rand(10)}".to_i )
                 parse_bucket( b )
             }
 
@@ -159,9 +158,8 @@ buckets     = %x{ find ./buckets -name "split_*" }.split(/\n/)
 
 ## Pass them to the record creater, and pool_size
 analyzer = Style::Analyzer.new( :method => "writer_invariant" )
-pp analyzer.records
 
-Style.create_records( buckets, 3 )
+Style.create_records( buckets, 1 )
 pp analyzer.records
 pp analyzer.run
 
