@@ -7,20 +7,24 @@ require 'thread'
 
 module Style
 
+    $records = Array.new()
 
     class Analyzer
         
-        attr_accessor :method
+        attr_accessor :method, :records
 
         ## records      = Style.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
         ## analysis     = Style::Analyzer.new( "wi" )   
         def initialize( args )
 
             @method     = args[:method] if args[:method]
-            @records    = nil
+            @records    = Array.new(0)
+        end
 
+        def self.run
             Style::Analyzer.send( @method.to_sym )
         end
+
 
         ## get_tokens( record.id ) 
         def self.get_tokens( rid )
@@ -116,6 +120,7 @@ module Style
                     File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}\n" }
                 }
 
+                $records.push record
             rescue => e
                 print "Borked on buckets/#{nick}.txt #{line}\t#{e}\n"
             end
@@ -128,7 +133,7 @@ module Style
 
     ### Style.create_records( string array buckets, string thread_pool_size )
     ### Returns list of type Record (at some point)
-    def self.create_records( buckets, pool_size = 8 )
+    def self.create_records( buckets, pool_size = 3 )
 
         threads     = Array.new()
 
@@ -137,7 +142,7 @@ module Style
             until threads.map { |t| t.status }.count("run") < pool_size do sleep 2 end
 
             threads << Thread.new() {
-                puts "New thread: #{threads.map { |t| t.status }.count("run")}"
+                print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
                 sleep( "0.#{rand(10)}".to_i )
                 parse_bucket( b )
             }
@@ -150,12 +155,13 @@ end
 
 
 ## List of data sources
-#buckets     = %x{ ls split_* }.split(/\n/)
+buckets     = %x{ find ./buckets -name "split_*" }.split(/\n/)
 
 ## Pass them to the record creater, and pool_size
-#Style.create_records( buckets, 3 )
-
-#Style::Analyzer.new( :method => "writer_invariant" )
-
 analyzer = Style::Analyzer.new( :method => "writer_invariant" )
-pp analyzer
+pp analyzer.records
+
+Style.create_records( buckets, 3 )
+pp analyzer.records
+pp analyzer.run
+
