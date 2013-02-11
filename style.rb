@@ -7,6 +7,70 @@ require 'thread'
 
 module Style
 
+
+	## records 		= Style.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
+	## analysis 	= Style.Analyzer.new( "wi" )	
+	class Analyzer
+		
+
+		## get_tokens( record.id ) 
+		def self.get_tokens( rid )
+
+			mcw 	= Hash.new		# most common word
+
+			begin 
+					lines = IO.read "./records/#{rid}.txt"
+				rescue => e
+					puts "[!] Error! #{e}"
+			end
+
+			str_array = lines.downcase.scan(/\w+/)
+
+			for string in str_array
+				mcw[string] += 1
+			end
+
+			mcw.sort{ |a,b| a[1] <=> b[1] }.reverse
+		end
+
+
+
+		#
+		# 		http://en.wikipedia.org/wiki/Stylometry#Writer_invariant
+		#
+		#		The primary stylometric method is the writer invariant: a property of a text which
+		# is invariant of its author. An example of a writer invariant is frequency of function
+		# words used by the writer.
+
+		#		In one such method, the text is analyzed to find the 50 most common words. The text
+		# is then broken into 5,000 word chunks and each of the chunks is analyzed to find the frequency of
+		# those 50 words in that chunk. This generates a unique 50-number identifier for each chunk.
+		# These numbers place each chunk of text into a point in a 50-dimensional space. This
+		# 50-dimensional space is flattened into a plane using principal components analysis (PCA).
+		# This results in a display of points that correspond to an author's style. If two literary
+		# works are placed on the same plane, the resulting pattern may show if both works were by the
+		# same author or different authors.
+
+		def self.writer_invariant( record_set )
+
+			lines = get_tokens( 
+
+			lines.each do |l|
+				mcw = get_tokens(l)
+
+				mcw.each do |w|
+					puts "Common Found --- #{w[0]}: #{w[1]}" if w[1] > 5
+				end
+			end
+		end
+	
+		def self.collocation
+		end
+
+		
+	end
+
+
 	class Record
 
 		attr_accessor :id, :stats
@@ -19,7 +83,6 @@ module Style
 		end
 
 	end
-
 
 	### Style.parse_bucket( string bucket )
 	def self.parse_bucket( bucket )
@@ -86,8 +149,10 @@ end
 
 
 ## List of data sources
-buckets     = %x{ ls split_* }.split(/\n/)
+#buckets     = %x{ ls split_* }.split(/\n/)
 
 ## Pass them to the record creater, and pool_size
-Style.create_records( buckets, 3 )
+#Style.create_records( buckets, 3 )
 
+
+analyzer = Style.Analyzer.new( :method => "wi" )
