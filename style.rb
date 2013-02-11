@@ -21,7 +21,7 @@ module Style
 	end
 
 
-	### Style.parse_bucket( BUCKET:string )
+	### Style.parse_bucket( string bucket )
 	def self.parse_bucket( bucket )
 		
 		## start timer
@@ -62,7 +62,7 @@ module Style
 		print "[!] Parsed #{bucket} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} seconds.  Lines skipped: #{skipped}\n"
 	end
 
-	### Style.create_records( ["array", "of", "buckets"], MAX_CONCURRENT_THREADS:string )
+	### Style.create_records( string array buckets, string thread_pool_size )
 	### Returns list of type Record (at some point)
 	def self.create_records( buckets, pool_size = 8 )
 
