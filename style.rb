@@ -8,31 +8,35 @@ require 'thread'
 module Style
 
 
-	## records 		= Style.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
-	## analysis 	= Style.Analyzer.new( "wi" )	
 	class Analyzer
 		
+		attr_accessor :method
+		
+		## records 		= Style.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
+		## analysis 	= Style::Analyzer.new( "wi" )	
+		def initialize( args )
+
+			@method 	= args[:method] if args[:method]
+			@records 	= nil
+
+			Style::Analyzer.send( @method.to_sym )
+		end
 
 		## get_tokens( record.id ) 
 		def self.get_tokens( rid )
 
-			mcw 	= Hash.new		# most common word
+			mcw 	= Hash.new(0)		# most common word
 
-			begin 
-					lines = IO.read "./records/#{rid}.txt"
-				rescue => e
-					puts "[!] Error! #{e}"
-			end
+			record_file = IO.read("./records/#{rid}.txt").downcase
 
-			str_array = lines.downcase.scan(/\w+/)
+			tokens = record_file.scan(/\w+/)
 
-			for string in str_array
+			for string in tokens
 				mcw[string] += 1
 			end
 
 			mcw.sort{ |a,b| a[1] <=> b[1] }.reverse
 		end
-
 
 
 		#
@@ -51,23 +55,19 @@ module Style
 		# works are placed on the same plane, the resulting pattern may show if both works were by the
 		# same author or different authors.
 
-		def self.writer_invariant( record_set )
+		def self.writer_invariant
 
-			lines = get_tokens( 
+			tokens = get_tokens( "0b41df3d3a4a7efdf3ef9cdb3aadc640" )
 
-			lines.each do |l|
-				mcw = get_tokens(l)
+			print "[+] Got #{tokens.count} tokens...\n"
 
-				mcw.each do |w|
-					puts "Common Found --- #{w[0]}: #{w[1]}" if w[1] > 5
-				end
+			tokens.each do |w|
+				puts "[+] Token: (#{w[1]})\t#{w[0]}" if w[1] > 5
 			end
 		end
 	
 		def self.collocation
 		end
-
-		
 	end
 
 
@@ -84,6 +84,7 @@ module Style
 
 	end
 
+	
 	### Style.parse_bucket( string bucket )
 	def self.parse_bucket( bucket )
 		
@@ -154,5 +155,7 @@ end
 ## Pass them to the record creater, and pool_size
 #Style.create_records( buckets, 3 )
 
+#Style::Analyzer.new( :method => "writer_invariant" )
 
-analyzer = Style.Analyzer.new( :method => "wi" )
+analyzer = Style::Analyzer.new( :method => "writer_invariant" )
+pp analyzer
