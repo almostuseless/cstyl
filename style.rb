@@ -27,27 +27,39 @@ module Style
 		## start timer
 		start = Time.now
 
+		## Number of lines skipped ( < 5 words, invalid nicks
+		skipped = 0    	# skip log in debug.log
+
+		mutex = Mutex.new()
 		## split lines and put them into their respective author records
 		IO.read("./#{bucket}").split(/\n/).each do |data|
 			begin
 				nick, line = data.split("\t")
 
-				next unless nick and line
-				next unless line.split(/ /).count > 5
+				
+				if nick.nil? or line.nil? or line.split(/ /).count < 5
+					skipped += 1
+
+					mutex.synchronize {
+						File.open("./debug.log", "w+") { |f| f.write("[#{bucket}][SKIP] #{nick} --- #{line}") }
+					}
+				end
 
 
 				record = Record.new( nick )
 
-				File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}\n" }
-	
+				mutex.synchronize {
+					File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}\n" }
+				}
+
 			rescue => e
-				print "Borked on buckets/#{nick}.txt --- #{line}\n-----------> #{e}\n"
+				print "Borked on buckets/#{nick}.txt #{line}\t#{e}\n"
 			end
 
 			
 		end
 
-		print "[!] Parsed #{bucket} in #{Time.now - start} seconds\n"
+		print "[!] Parsed #{bucket} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} seconds.  Lines skipped: #{skipped}\n"
 	end
 
 	### Style.create_records( ["array", "of", "buckets"], MAX_CONCURRENT_THREADS:string )
@@ -60,7 +72,8 @@ module Style
 
 			until threads.map { |t| t.status }.count("run") < pool_size do sleep 2 end
 
-			threads << Thread.new() { 
+			threads << Thread.new() {
+				puts "New thread: #{threads.map { |t| t.status }.count("run")}"
 				sleep( "0.#{rand(10)}".to_i )
 				parse_bucket( b )
 			}
