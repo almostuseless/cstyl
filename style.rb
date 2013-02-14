@@ -7,7 +7,11 @@ require 'thread'
 
 module Style
 
-    $records = Array.new()
+    class << self; end
+
+    @records = Array.new()
+    attr_accessor :records
+
 
     class Analyzer
         
@@ -18,7 +22,6 @@ module Style
         def initialize( args )
 
             @method     = args[:method] if args[:method]
-            @records    = Array.new(0)
         end
 
         def self.run
@@ -66,7 +69,7 @@ module Style
             print "[+] Got #{tokens.count} tokens...\n"
 
             tokens.each do |w|
-                puts "[+] Token: (#{w[1]})\t#{w[0]}" if w[1] > 5
+                print "[+] Token: (#{w[1]})\t#{w[0]}\n" if w[1] > 5
             end
         end
     
@@ -88,28 +91,31 @@ module Style
 
     end
 
-    
     ### Style.parse_bucket( string bucket )
     def self.parse_bucket( bucket )
-        
+
         ## start timer
-        start = Time.now
 
         ## Number of lines skipped ( < 5 words, invalid nicks
         skipped = 0     # skip log in debug.log
 
         mutex = Mutex.new()
-        ## split lines and put them into their respective author records
-        IO.read("./#{bucket}").split(/\n/).each do |data|
+        ## split lines into their respective author records
+
+        buckets = File.open( bucket, "a+" )
+
+        print "[!] Parsing #{bucket}\n"
+
+        buckets.each_line do |data|
             begin
                 nick, line = data.split("\t")
 
                 
                 if nick.nil? or line.nil? or line.split(/ /).count < 5
                     skipped += 1
-
+                    
                     mutex.synchronize {
-                        File.open("./debug.log", "w+") { |f| f.write("[#{bucket}][SKIP] #{nick} --- #{line}") }
+                        File.open("./debug.log", "a+") { |f| f.write("[#{bucket}][SKIP] #{nick} --- #{line}") }
                     }
                 end
 
@@ -117,23 +123,25 @@ module Style
                 record = Record.new( nick )
 
                 mutex.synchronize {
-                    File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}\n" }
+                    File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}" }
                 }
 
-                $records.push record
+                @records.push record
+
             rescue => e
                 print "Borked on buckets/#{nick}.txt #{line}\t#{e}\n"
             end
 
-            
         end
 
-        print "[!] Parsed #{bucket} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} seconds.  Lines skipped: #{skipped}\n"
+        return @records.count
+
     end
+
 
     ### Style.create_records( string array buckets, string thread_pool_size )
     ### Returns list of type Record (at some point)
-    def self.create_records( buckets, pool_size = 1 )
+    def self.create_records( buckets, pool_size = 3 )
 
         threads     = Array.new()
 
@@ -142,8 +150,14 @@ module Style
             until threads.map { |t| t.status }.count("run") < pool_size do sleep 5 end
 
             threads << Thread.new() {
-                print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
-                parse_bucket( b )
+                #print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
+
+                start = Time.now
+
+                res = parse_bucket( b )
+    
+                print "[+] Parsed #{b} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} "
+                print "seconds yeilding #{@records.count} records\n"
             }
 
         end
@@ -152,14 +166,16 @@ module Style
     end
 end
 
-
-## List of data sources
+# List of data sources
 buckets     = %x{ find ./buckets -name "split_*" }.split(/\n/)
 
 ## Pass them to the record creater, and pool_size
 analyzer = Style::Analyzer.new( :method => "writer_invariant" )
 
-Style.create_records( buckets, 1 )
-pp analyzer.records
-pp analyzer.run
 
+puts "[!] analyzer"
+pp analyzer
+
+Style.create_records( buckets, 10 )
+
+pp Style.records
