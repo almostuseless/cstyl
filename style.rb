@@ -4,7 +4,32 @@ require 'rubygems'
 require 'pp'
 require 'digest/md5'
 require 'thread'
+require 'sqlite3'
 
+
+module DB
+    class << self; end
+
+    
+
+    ## db = DB::IO.new( "records.db" )
+    class IO
+        attr_accessor :db
+
+        def initialize( file )
+            @db = SQLite3::Database.new file
+
+
+        end
+    end
+
+end
+
+
+pp DB::IO.new("test.db")
+
+
+=begin
 module Style
 
     class << self; end
@@ -179,3 +204,4 @@ pp analyzer
 Style.create_records( buckets, 10 )
 
 pp Style.records
+=end
