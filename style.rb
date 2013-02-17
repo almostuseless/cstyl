@@ -5,6 +5,7 @@ require 'pp'
 require 'digest/md5'
 require 'thread'
 require 'sqlite3'
+require 'mechanize'
 
 
 module DB
@@ -17,40 +18,76 @@ module DB
         attr_accessor :db
 
         def initialize( file )
-            @db = SQLite3::Database.new file
-
-
+            if file
+                @db = SQLite3::Database.new file
+            else
+                die "nope"
+            end
         end
     end
 
 end
 
 
-pp DB::IO.new("test.db")
+module CStyl
+
+#    class << self; end
 
 
-=begin
-module Style
+    module Corpus
+        def self.create
+        end
+    end
 
-    class << self; end
+    module Aggregator
 
-    @records = Array.new()
-    attr_accessor :records
+        class << self; end
+
+        ## res = CStyl::Aggregator::Quora.new("http://www.quora.com/What-are-some-useful-technical-skills-I-can-learn-within-a-day")
+        class Quora
+
+            class << self; end
+
+            attr_accessor :data, :link
+            
+            def initialize( args )
+                @data = Hash.new
+                @link = args[:link] if args[:link]
+
+                mech = Mechanize.new
+
+                mech.get( @link ) do |page|
+
+                    doc = Nokogiri::HTML( page.content, nil, "UTF-8" )
+
+                    pp doc.at_css("#__w2_")
+
+#                    doc.xpath('//div[starts-with(@id, "__w2_")]').each do |div|
+#                        puts "Div: #{div}"
+#                    end
+                        
+                     
+                end
+
+            end
+        end
+    end
 
 
     class Analyzer
         
         attr_accessor :method, :records
+        @@records = Array.new()
 
-        ## records      = Style.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
-        ## analysis     = Style::Analyzer.new( "wi" )   
+        ## records      = CStyl.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
+        ## analysis     = CStyl::Analyzer.new( "wi" )   
         def initialize( args )
-
+            pp args
             @method     = args[:method] if args[:method]
         end
 
         def self.run
-            Style::Analyzer.send( @method.to_sym )
+            CStyl::Analyzer.send( @method.to_sym )
         end
 
 
@@ -103,6 +140,101 @@ module Style
     end
 
 
+
+    module Bucket
+
+        class << self; end
+
+
+        class Aggregator
+
+        end
+
+        class Parser < CStyl::Analyzer
+
+            ### CStyl::Parser.parse_bucket( string bucket )
+            def self.parse_bucket( bucket )
+
+                ## start timer
+                start = Time.new
+
+                ## Number of lines skipped ( < 5 words, invalid nicks
+                skipped = 0     # skip log in debug.log
+
+                mutex = Mutex.new()
+                ## split lines into their respective author records
+
+                buckets = File.open( bucket, "a+" )
+
+                print "[!] Parsing #{bucket}\n"
+
+                buckets.each_line do |data|
+                    begin
+                        nick, line = data.split("\t")
+
+                        
+                        if nick.nil? or line.nil? or line.split(/ /).count < 5
+                            skipped += 1
+                            
+                            mutex.synchronize {
+                                File.open("./debug.log", "a+") { |f| f.write("[#{bucket}][SKIP] #{nick} --- #{line}") }
+                            }
+                        end
+
+
+                        record = Record.new( nick )
+
+                        mutex.synchronize {
+                            File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}" }
+                        }
+
+                        @@records.push record
+
+                        pp @@records
+                        sleep 2
+
+                    rescue => e
+                        print "Borked on buckets/#{nick}.txt #{line}\t#{e}\n"
+                    end
+
+                end
+
+                return @@records.count
+
+            end
+
+
+            ### CStyl.create_records( string array buckets, string thread_pool_size )
+            ### Returns list of type Record (at some point)
+            def self.create_records( buckets, pool_size = 3 )
+
+                threads     = Array.new()
+
+                buckets.each do |b|
+
+                    until threads.map { |t| t.status }.count("run") < pool_size do sleep 5 end
+
+                    threads << Thread.new() {
+                        #print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
+
+                        start = Time.now
+
+                        res = parse_bucket( b )
+            
+                        print "[+] Parsed #{b} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} "
+                        print "seconds yeilding #{@@records.count} records\n"
+                    }
+
+                end
+
+                output = threads.map { |t| t.value }
+            end
+        end
+    end
+
+
+
+
     class Record
 
         attr_accessor :id, :stats
@@ -116,92 +248,33 @@ module Style
 
     end
 
-    ### Style.parse_bucket( string bucket )
-    def self.parse_bucket( bucket )
-
-        ## start timer
-
-        ## Number of lines skipped ( < 5 words, invalid nicks
-        skipped = 0     # skip log in debug.log
-
-        mutex = Mutex.new()
-        ## split lines into their respective author records
-
-        buckets = File.open( bucket, "a+" )
-
-        print "[!] Parsing #{bucket}\n"
-
-        buckets.each_line do |data|
-            begin
-                nick, line = data.split("\t")
-
-                
-                if nick.nil? or line.nil? or line.split(/ /).count < 5
-                    skipped += 1
-                    
-                    mutex.synchronize {
-                        File.open("./debug.log", "a+") { |f| f.write("[#{bucket}][SKIP] #{nick} --- #{line}") }
-                    }
-                end
 
 
-                record = Record.new( nick )
 
-                mutex.synchronize {
-                    File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}" }
-                }
-
-                @records.push record
-
-            rescue => e
-                print "Borked on buckets/#{nick}.txt #{line}\t#{e}\n"
-            end
-
-        end
-
-        return @records.count
-
-    end
-
-
-    ### Style.create_records( string array buckets, string thread_pool_size )
-    ### Returns list of type Record (at some point)
-    def self.create_records( buckets, pool_size = 3 )
-
-        threads     = Array.new()
-
-        buckets.each do |b|
-
-            until threads.map { |t| t.status }.count("run") < pool_size do sleep 5 end
-
-            threads << Thread.new() {
-                #print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
-
-                start = Time.now
-
-                res = parse_bucket( b )
     
-                print "[+] Parsed #{b} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} "
-                print "seconds yeilding #{@records.count} records\n"
-            }
 
-        end
 
-        output = threads.map { |t| t.value }
-    end
 end
 
+
+q = CStyl::Aggregator::Quora.new( :link => "http://www.quora.com/What-are-some-useful-technical-skills-I-can-learn-within-a-day" )
+pp q
+
+#pp CStyl::Aggregator::Quora.fetch
+
+=begin
 # List of data sources
 buckets     = %x{ find ./buckets -name "split_*" }.split(/\n/)
 
 ## Pass them to the record creater, and pool_size
-analyzer = Style::Analyzer.new( :method => "writer_invariant" )
+analyzer = CStyl::Analyzer.new( :method => "writer_invariant" )
 
 
 puts "[!] analyzer"
 pp analyzer
 
-Style.create_records( buckets, 10 )
+CStyl::Bucket::Parser.create_records( buckets, 10 )
 
-pp Style.records
+pp CStyl.records
+
 =end
