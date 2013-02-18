@@ -59,10 +59,11 @@ module CStyl
         end
 
 
-        ## Will have to vallidate arguments at some point
+        ## Will have to validate arguments at some point
         def phpbb( args )
 
-            db = args[:db]
+            db = args.fetch :db
+
             mysql = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
 
             rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 10")
