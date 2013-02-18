@@ -11,7 +11,7 @@ Example usage
                         :db => {    :user => "roobay",
                                     :pass => "butts",
                                     :host => "localhost",
-                                    :db_name => "htd0rg"  } } )
+                                    :db_name => "some_phpbb_db"  } } )
 
 
     stats.generate( :style => "nine_feature", :args => nil )[:stats].each do |a|
