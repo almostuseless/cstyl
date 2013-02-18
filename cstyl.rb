@@ -44,7 +44,7 @@ module CStyl
 
     ##
     ##  corpus = Corpus.new()
-    ##  corpus.generate( :type => "phpbb", :args => { :db => { :host => "localhost", :db_name => "htd0rg" } } )
+    ##  corpus.generate( :type => "phpbb", :args => { :db => { :host => "localhost", :db_name => "some_phpbb_db" } } )
     ##
     ##  Generates ./corpus directory
     ##
