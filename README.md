@@ -24,7 +24,7 @@ Example usage
     end
 
 
-Example Output
+Example output
 --------------
     [gift@hercales cstyl]$ ruby testing.rb 
     ----------------------
