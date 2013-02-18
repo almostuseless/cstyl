@@ -15,9 +15,8 @@ module CStyl
     ##
     ##  corpus = Corpus.new()
     ##  corpus.generate( :type => "phpbb", :args => { :db => { :host => "localhost", :db_name => "htd0rg" } } )
-    ##  pp corpus
     ##
-    ##  { Corpus.@authors => [] }
+    ##  Generates ./corpus directory
     ##
     class Corpus
         
@@ -81,12 +80,6 @@ module CStyl
         end
     end
 
-    module Aggregator
-
-    end
-
-
-    
     ##  corpus  = CStyl::Corpus.new
     ##  stats   = CStyl::Analysis.new
     ##
