@@ -4,9 +4,9 @@ require 'rubygems'
 require 'pp'
 require 'digest/md5'
 require 'thread'
-require 'sqlite3'
 require 'mechanize'
-
+require 'mysql'
+require 'ruby-progressbar'
 
 module DB
     class << self; end
@@ -34,43 +34,76 @@ module CStyl
 #    class << self; end
 
 
-    module Corpus
-        def self.create
+    ##
+    ##  corpus = Corpus.new()
+    ##  corpus.generate( :type => "phpbb", :args => { :db => { :host => "localhost", :db_name => "htd0rg" } } )
+    ##  pp corpus
+    ##
+    ##  { Corpus.@authors => [] }
+    ##
+    class Corpus
+        
+        def generate( opts )
+
+            pp opts
+
+            type = opts.fetch :type
+            args = opts.fetch :args
+
+            self.send type, args
+        end
+
+
+        ## Will have to vallidate arguments at some point
+        def phpbb( args )
+
+            db = args[:db]
+            mysql = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
+
+            rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 10")
+
+            pb = ProgressBar.create(:title => "Rows", :starting_at => 0, :total => rs.num_rows )
+
+            rs.num_rows.times do 
+                row   = rs.fetch_row
+                chunk = Hash.new
+
+
+                ## need to make a id_number => md5 map somewhere to keep this from
+                ## running 50 times for the same row[0] value
+                chunk[:id]      = Digest::MD5.hexdigest row[0]
+                chunk[:sub]     = row[1]
+                chunk[:text]    = row[2]
+
+                dirs = chunk[:id].match(/^(?<first>.)(?<second>.)/)
+                path = File.join( "./corpus", dirs['first'], dirs['second'] )
+
+                unless File.directory?( path )
+                    %x{ mkdir -p #{ path } }
+                end
+
+                ##  Make this a comprehensive method
+                ##  Normalization and classification/removal of unuseable substrings
+
+                chunk[:text].gsub!(/\[url.*?\[\/url.*?\]/," ")
+                chunk[:text].gsub!(/\\[rn]/,"")
+                chunk[:text].gsub!(/[\r\n]/,"")
+                chunk[:text].gsub!(/\s+/," ")
+                chunk[:text].gsub!(/http\S+/,"")
+                chunk[:text].gsub!(/<!--.*?-->/,"")
+                chunk[:text].gsub!(/<img.*?\/>/,"")
+
+                next unless chunk[:text].split(/\s/).count >= 10
+                
+                File.open( "#{path}/#{chunk[:id]}", "a+" ) { |f| f.write "#{chunk[:text]}\n" }
+                
+                pb.increment
+            end
         end
     end
 
     module Aggregator
 
-        class << self; end
-
-        ## res = CStyl::Aggregator::Quora.new("http://www.quora.com/What-are-some-useful-technical-skills-I-can-learn-within-a-day")
-        class Quora
-
-            class << self; end
-
-            attr_accessor :data, :link
-            
-            def initialize( args )
-                @data = Hash.new
-                @link = args[:link] if args[:link]
-
-                mech = Mechanize.new
-
-                mech.get( @link ) do |page|
-
-                    doc = Nokogiri::HTML( page.content, nil, "UTF-8" )
-
-                    pp doc.at_css("#__w2_")
-
-#                    doc.xpath('//div[starts-with(@id, "__w2_")]').each do |div|
-#                        puts "Div: #{div}"
-#                    end
-                        
-                     
-                end
-
-            end
-        end
     end
 
 
@@ -140,141 +173,25 @@ module CStyl
     end
 
 
-
+    ## Ripped this out at e57312e3a3b8762fe7dc719cd5d5c45311af8e9b
+    ## 
     module Bucket
-
-        class << self; end
-
-
-        class Aggregator
-
-        end
-
-        class Parser < CStyl::Analyzer
-
-            ### CStyl::Parser.parse_bucket( string bucket )
-            def self.parse_bucket( bucket )
-
-                ## start timer
-                start = Time.new
-
-                ## Number of lines skipped ( < 5 words, invalid nicks
-                skipped = 0     # skip log in debug.log
-
-                mutex = Mutex.new()
-                ## split lines into their respective author records
-
-                buckets = File.open( bucket, "a+" )
-
-                print "[!] Parsing #{bucket}\n"
-
-                buckets.each_line do |data|
-                    begin
-                        nick, line = data.split("\t")
-
-                        
-                        if nick.nil? or line.nil? or line.split(/ /).count < 5
-                            skipped += 1
-                            
-                            mutex.synchronize {
-                                File.open("./debug.log", "a+") { |f| f.write("[#{bucket}][SKIP] #{nick} --- #{line}") }
-                            }
-                        end
-
-
-                        record = Record.new( nick )
-
-                        mutex.synchronize {
-                            File.open( "./records/#{record.id}.txt", "a+") { |f| f.write "#{line}" }
-                        }
-
-                        @@records.push record
-
-                        pp @@records
-                        sleep 2
-
-                    rescue => e
-                        print "Borked on buckets/#{nick}.txt #{line}\t#{e}\n"
-                    end
-
-                end
-
-                return @@records.count
-
-            end
-
-
-            ### CStyl.create_records( string array buckets, string thread_pool_size )
-            ### Returns list of type Record (at some point)
-            def self.create_records( buckets, pool_size = 3 )
-
-                threads     = Array.new()
-
-                buckets.each do |b|
-
-                    until threads.map { |t| t.status }.count("run") < pool_size do sleep 5 end
-
-                    threads << Thread.new() {
-                        #print "New thread: #{threads.map { |t| t.status }.count("run")}\n"
-
-                        start = Time.now
-
-                        res = parse_bucket( b )
-            
-                        print "[+] Parsed #{b} in #{(Time.now - start).to_s.match(/^(\d+\.\d)/)[1]} "
-                        print "seconds yeilding #{@@records.count} records\n"
-                    }
-
-                end
-
-                output = threads.map { |t| t.value }
-            end
-        end
     end
 
-
-
-
+    ## Ripped this out at e57312e3a3b8762fe7dc719cd5d5c45311af8e9b
+    ## 
     class Record
-
-        attr_accessor :id, :stats
-        
-        # Record.new( "__AUTHOR__FILE__" )
-        def initialize( author = "null" )
-            salt    = "260d98e6f9fcdebea77edcd808c592ec"
-            @id     = Digest::MD5.hexdigest( author + ":" + salt ) 
-            @stats  = { :lines => 0, :words => 0 }
-        end
-
     end
-
-
-
-
-    
-
 
 end
 
 
-q = CStyl::Aggregator::Quora.new( :link => "http://www.quora.com/What-are-some-useful-technical-skills-I-can-learn-within-a-day" )
-pp q
+corpus = CStyl::Corpus.new
 
-#pp CStyl::Aggregator::Quora.fetch
+pp corpus
 
-=begin
-# List of data sources
-buckets     = %x{ find ./buckets -name "split_*" }.split(/\n/)
-
-## Pass them to the record creater, and pool_size
-analyzer = CStyl::Analyzer.new( :method => "writer_invariant" )
-
-
-puts "[!] analyzer"
-pp analyzer
-
-CStyl::Bucket::Parser.create_records( buckets, 10 )
-
-pp CStyl.records
-
-=end
+corpus.generate( :type => "phpbb", :args => {
+                    :db => {    :user => "roobay",
+                                :pass => "butts",
+                                :host => "localhost",
+                                :db_name => "htd0rg"  } } )
