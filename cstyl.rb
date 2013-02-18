@@ -62,14 +62,19 @@ module CStyl
         ## Will have to validate arguments at some point
         def phpbb( args )
 
+
+
+            puts "----------------------"
+            puts "        PPHPBB"
+            puts "----------------------"
+
             db = args.fetch :db
 
             mysql = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
 
             rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 10")
 
-            puts "Handling #{rs.num_rows} rows from phpbb_posts"
-            pb = ProgressBar.create(:title => "Rows", :starting_at => 0, :total => rs.num_rows )
+            pb = ProgressBar.create(:title => "Handling #{rs.num_rows} rows", :starting_at => 0, :total => rs.num_rows )
 
             rs.num_rows.times do 
                 row   = rs.fetch_row
@@ -123,7 +128,6 @@ module CStyl
                 pb.increment
             end
 
-            puts
         end
     end
 
@@ -170,15 +174,14 @@ module CStyl
        
             ##  Sentence count first, then loop through sentences adding /new/ words 
             ##  to the 'unique_words' array.
-            puts "Generating 9-feature set statistics on #{@@data[:top_authors].count} authors"
 
             ## Going to push different author stats (type Hash) into this array
             @@data[:stats] = Array.new
+    
             puts
             sleep(0.1)
-
-            pb = ProgressBar.create(:title => "Buckets analyzed", :starting_at => 0, :total => @@data[:top_authors].count )
-
+            pb = ProgressBar.create(    :title => "Analyzing #{@@data[:top_authors].count} authors", 
+                                        :starting_at => 0, :total => @@data[:top_authors].count )
             @@data[:top_authors].each do |a|
 
                 ## We will push this onto @@data[:authors]
@@ -236,14 +239,3 @@ module CStyl
 
 end
 
-corpus = CStyl::Corpus.new
-stats  = CStyl::Analysis.new
-
-corpus.generate( :type => "phpbb", :args => {
-                    :db => {    :user => "roobay",
-                                :pass => "butts",
-                                :host => "localhost",
-                                :db_name => "htd0rg"  } } )
-
-
-pp stats.generate( :style => "nine_feature", :args => nil )[:stats]
