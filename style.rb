@@ -8,31 +8,9 @@ require 'mechanize'
 require 'mysql'
 require 'ruby-progressbar'
 
-module DB
-    class << self; end
-
-    
-
-    ## db = DB::IO.new( "records.db" )
-    class IO
-        attr_accessor :db
-
-        def initialize( file )
-            if file
-                @db = SQLite3::Database.new file
-            else
-                die "nope"
-            end
-        end
-    end
-
-end
 
 
 module CStyl
-
-#    class << self; end
-
 
     ##
     ##  corpus = Corpus.new()
@@ -202,37 +180,6 @@ module CStyl
             end
 
             mcw.sort{ |a,b| a[1] <=> b[1] }.reverse
-        end
-
-
-        #
-        #       http://en.wikipedia.org/wiki/Stylometry#Writer_invariant
-        #
-        #       The primary stylometric method is the writer invariant: a property of a text which
-        # is invariant of its author. An example of a writer invariant is frequency of function
-        # words used by the writer.
-
-        #       In one such method, the text is analyzed to find the 50 most common words. The text
-        # is then broken into 5,000 word chunks and each of the chunks is analyzed to find the frequency of
-        # those 50 words in that chunk. This generates a unique 50-number identifier for each chunk.
-        # These numbers place each chunk of text into a point in a 50-dimensional space. This
-        # 50-dimensional space is flattened into a plane using principal components analysis (PCA).
-        # This results in a display of points that correspond to an author's style. If two literary
-        # works are placed on the same plane, the resulting pattern may show if both works were by the
-        # same author or different authors.
-
-        def self.writer_invariant
-
-            tokens = get_tokens( "0b41df3d3a4a7efdf3ef9cdb3aadc640" )
-
-            print "[+] Got #{tokens.count} tokens...\n"
-
-            tokens.each do |w|
-                print "[+] Token: (#{w[1]})\t#{w[0]}\n" if w[1] > 5
-            end
-        end
-    
-        def self.collocation
         end
     end
 
