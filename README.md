@@ -18,7 +18,8 @@ Example usage
         puts "Author: #{a[:id].gsub!(/^.*?\/.\/.\//,"")}"
         puts "\tsc: #{a[:sentence_count]}"
         puts "\twc: #{a[:word_count]}"
-        puts "\tlc: #{a[:letter_count]}\n\n"
+        puts "\tlc: #{a[:letter_count]}\n"
+        puts "\tflesch:\t\t #{a[:flesch_score]}\n\n"
 
     end
 
