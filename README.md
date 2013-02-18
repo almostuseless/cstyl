@@ -1,5 +1,8 @@
 Example usage
 -------------
+    #!/usr/bin/env ruby
+    require_relative './cstyl.rb'
+
 
     corpus = CStyl::Corpus.new
     stats  = CStyl::Analysis.new
@@ -8,10 +11,17 @@ Example usage
                         :db => {    :user => "roobay",
                                     :pass => "butts",
                                     :host => "localhost",
-                                    :db_name => "some_phpbb_db"  } } )
+                                    :db_name => "htd0rg"  } } )
 
 
-    pp stats.generate( :style => "nine_feature" )[:stats]
+    stats.generate( :style => "nine_feature", :args => nil )[:stats].each do |a|
+        puts "Author: #{a[:id].gsub!(/^.*?\/.\/.\//,"")}"
+        puts "\tsc: #{a[:sentence_count]}"
+        puts "\twc: #{a[:word_count]}"
+        puts "\tlc: #{a[:letter_count]}\n\n"
+
+    end
+
 
 Example Output
 --------------
