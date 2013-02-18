@@ -60,6 +60,7 @@ module CStyl
 
             rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 10")
 
+            puts "Handling #{rs.num_rows} rows from phpbb_posts"
             pb = ProgressBar.create(:title => "Rows", :starting_at => 0, :total => rs.num_rows )
 
             rs.num_rows.times do 
@@ -82,14 +83,13 @@ module CStyl
 
                 ##  Make this a comprehensive method
                 ##  Normalization and classification/removal of unuseable substrings
-
-                chunk[:text].gsub!(/\[url.*?\[\/url.*?\]/," ")
+                chunk[:text].gsub!(/\[(code|url|quote):([^\]]+?)\].*?\[\/\1:\2\]/,"")
                 chunk[:text].gsub!(/\\[rn]/,"")
                 chunk[:text].gsub!(/[\r\n]/,"")
                 chunk[:text].gsub!(/\s+/," ")
                 chunk[:text].gsub!(/http\S+/,"")
                 chunk[:text].gsub!(/<!--.*?-->/,"")
-                chunk[:text].gsub!(/<img.*?\/>/,"")
+                chunk[:text].gsub!(/<(?:a|img) .*?\/>/,"")
                 chunk[:text].gsub!(/\.\.+/,".")
 
                 next unless chunk[:text].split(/\s/).count >= 10
@@ -98,6 +98,8 @@ module CStyl
                 
                 pb.increment
             end
+
+            puts
         end
     end
 
@@ -124,16 +126,18 @@ module CStyl
         def initialize
             @@data               = Hash.new
             @@analysis           = Array.new
-            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n30 | head -n29 |awk '{ print $2 }' }.split(/\n/)
+
+        end
+
+        def generate( opts )
+
+            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n11 | head -n10 |awk '{ print $2 }' }.split(/\n/)
 
             if @@data[:top_authors].count < 5
                 puts "Error, only got #{@data[:top_authors]} authors.  Check your corpus"
                 exit
             end
 
-        end
-
-        def generate( opts )
             style = opts.fetch :style
             args  = opts.fetch :args
             CStyl::Analysis.send( style.to_sym, args )
@@ -152,20 +156,32 @@ module CStyl
 
             ## Going to push different author stats (type Hash) into this array
             @@data[:stats] = Array.new
+            puts
+            sleep(0.1)
+
+            pb = ProgressBar.create(:title => "Buckets analyzed", :starting_at => 0, :total => @@data[:top_authors].count )
 
             @@data[:top_authors].each do |a|
 
                 ## We will push this onto @@data[:authors]
-                author_data = Hash.new
-                author_data[:id] = a
+                author_data                 = Hash.new
+
+                ## Placeholders
+                author_data[:id]            = a
+                author_data[:letter_count]  = 0
+                author_data[:word_count]    = 0
 
                 sentences = IO.read( a ).force_encoding("ISO-8859-1").encode("utf-8", replace: nil ).split(/[.!?]/)
                 author_data[:sentence_count] = sentences.count
 
                 sentences.each do |sen|
+                    author_data[:word_count]    += sen.split(/\s+/).count
+                    author_data[:letter_count]  += sen.scan(/\S/).count
                 end
 
                 @@data[:stats].push author_data
+
+                pb.increment
             end
 
             @@data
@@ -233,15 +249,14 @@ module CStyl
 
 end
 
-
-#corpus = CStyl::Corpus.new
+corpus = CStyl::Corpus.new
 stats  = CStyl::Analysis.new
 
-#corpus.generate( :type => "phpbb", :args => {
-#                    :db => {    :user => "roobay",
-#                                :pass => "butts",
-#                                :host => "localhost",
-#                                :db_name => "htd0rg"  } } )
+corpus.generate( :type => "phpbb", :args => {
+                    :db => {    :user => "roobay",
+                                :pass => "butts",
+                                :host => "localhost",
+                                :db_name => "htd0rg"  } } )
 
 
 pp stats.generate( :style => "nine_feature", :args => nil )[:stats]
