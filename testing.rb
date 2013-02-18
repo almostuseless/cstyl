@@ -18,6 +18,7 @@ stats.generate( :style => "nine_feature", :args => nil )[:stats].each do |a|
     puts "\tsentences:\t #{a[:sentence_count]}"
     puts "\twords:\t\t #{a[:word_count]}"
     puts "\tletters:\t #{a[:letter_count]}"
-    puts "\tsyllables:\t #{a[:syllable_count]}\n\n"
+    puts "\tsyllables:\t #{a[:syllable_count]}\n"
+    puts "\tflesch:\t\t #{a[:flesch_score]}\n\n"
 end
 

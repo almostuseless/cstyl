@@ -153,9 +153,9 @@ module CStyl
 
         def generate( opts )
 
-            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n11 | head -n10 |awk '{ print $2 }' }.split(/\n/)
+            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n4 | head -n3 |awk '{ print $2 }' }.split(/\n/)
 
-            if @@data[:top_authors].count < 5
+            if @@data[:top_authors].count == 0
                 puts "Error, only got #{@data[:top_authors]} authors.  Check your corpus"
                 exit
             end
@@ -185,8 +185,8 @@ module CStyl
         ##
         def self.nine_feature( args )
        
-            ##  Sentence count first, then loop through sentences adding /new/ words 
-            ##  to the 'unique_words' array.
+            ##  Sentence count first, then loop through sentences counting words,  
+            ##  letters, syllables, and indexes
 
             ## Going to push different author stats (type Hash) into this array
             @@data[:stats] = Array.new
@@ -196,6 +196,13 @@ module CStyl
             pb = ProgressBar.create(    :title => "Analyzing #{@@data[:top_authors].count} authors", 
                                         :starting_at => 0, :total => @@data[:top_authors].count )
             @@data[:top_authors].each do |a|
+
+
+
+                ## FUCKING DO ME FIRST
+                ## Split bucket into 50 chunks, run below functions on each
+                ## then return the averages.  expirement with give/take limits
+                ## for comparisons.
 
                 ## We will push this onto @@data[:authors]
 
@@ -212,7 +219,18 @@ module CStyl
                     sen.split(/[ ,]/).each do |w|
                         author_data[:syllable_count]   += self.num_syllables( w )
                     end
+
+
                 end
+
+                ##  The result is a number that corresponds with a grade level. For example, a 
+                ##  score of 8.2 would indicate that the text is expected to be understandable 
+                ##  by an average student in eighth grade (usually around ages 12–14 in the 
+                ##  United States of America). The sentence, "The Australian platypus is seemingly 
+                ##  a hybrid of a mammal and reptilian creature" is a 13.1 as it has 26 syllables 
+                ##  and 13 words.
+
+                author_data[:flesch_score] = 0.39 * ( author_data[:word_count] / author_data[:sentence_count] ) + 11.8 * ( author_data[:syllable_count] / author_data[:word_count] ) - 15.59
 
                 @@data[:stats].push author_data
 

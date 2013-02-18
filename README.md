@@ -29,55 +29,28 @@ Example Output
     ----------------------
             PPHPBB
     ----------------------
-    Handling 95090 rows: |=======================================  |
-    Analyzing 10 authors: |========================================|
-    Author: bd686fd640be98efaae0091fa301e613
-        sc: 12279
-        wc: 184596
-        lc: 784712
 
-    Author: 50dd7100bcbd98c41b1179143a2325a4
-        sc: 16997
-        wc: 236520
-        lc: 1067382
-
-    Author: 8cea559c47e4fbdb73b23e0223d04e79
-        sc: 22899
-        wc: 283267
-        lc: 1394476
-
-    Author: 8a50bae297807da9e97722a0b3fd8f27
-        sc: 14639
-        wc: 193987
-        lc: 873326
-
-    Author: c4ca4238a0b923820dcc509a6f75849b
-        sc: 15017
-        wc: 202077
-        lc: 1008538
-
-    Author: c06d06da9666a219db15cf575aff2824
-        sc: 22797
-        wc: 460877
-        lc: 2065592
-
-    Author: 8b4066554730ddfaa0266346bdc1b202
-        sc: 28511
-        wc: 302537
-        lc: 1511028
+    Handling 95090 rows: |=========================================|
+    Analyzing 3 authors: |=========================================|
 
     Author: fe70c36866add1572a8e2b96bfede7bf
-        sc: 14763
-        wc: 235571
-        lc: 1159144
+        sentences:   7382
+        words:       117785
+        letters:     579572
+        syllables:   181198
+        flesch:      2.0600000000000023
 
     Author: 6cf821bc98b2d343170185bb3de84cc4
-        sc: 16805
-        wc: 283117
-        lc: 1339730
+        sentences:   8403
+        words:       141558
+        letters:     669865
+        syllables:   212069
+        flesch:      2.4499999999999993
 
     Author: 71f07bf95f0113eefab12552181dd832
-        sc: 35495
-        wc: 528819
-        lc: 2646092
+        sentences:   17748
+        words:       264409
+        letters:     1323046
+        syllables:   407555
+        flesch:      1.6700000000000017
 
