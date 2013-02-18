@@ -246,14 +246,3 @@ corpus.generate( :type => "phpbb", :args => {
 
 
 pp stats.generate( :style => "nine_feature", :args => nil )[:stats]
-
-    ##  corpus  = CStyl::Corpus.new
-    ##  stats   = CStyl::Analysis.new
-    ##
-    ##  corpus.generate(...)
-    ##  stats.generate( :style => "nine_feature" )
-    ##
-    ##  pp stats => { :unique_words => 0, :complexity => 0, :sentence_count => 0,
-    ##                :letter_count => 0, :syllable_count => 0, :gunning_fog => 0, 
-    ##                :flesch_score => 0 }
-    ##
