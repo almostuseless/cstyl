@@ -90,6 +90,7 @@ module CStyl
                 chunk[:text].gsub!(/http\S+/,"")
                 chunk[:text].gsub!(/<!--.*?-->/,"")
                 chunk[:text].gsub!(/<img.*?\/>/,"")
+                chunk[:text].gsub!(/\.\.+/,".")
 
                 next unless chunk[:text].split(/\s/).count >= 10
                 
@@ -118,8 +119,19 @@ module CStyl
     ##
     class Analysis
         
-        attr_accessor :method, :records
-        @@records = Array.new()
+        attr_accessor :data, :analysis
+
+        def initialize
+            @@data               = Hash.new
+            @@analysis           = Array.new
+            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n30 | head -n29 |awk '{ print $2 }' }.split(/\n/)
+
+            if @@data[:top_authors].count < 5
+                puts "Error, only got #{@data[:top_authors]} authors.  Check your corpus"
+                exit
+            end
+
+        end
 
         def generate( opts )
             style = opts.fetch :style
@@ -128,10 +140,35 @@ module CStyl
         end
 
 
-        def self.nine_feature
+        ##  9-Feature set
+        ##  Unique words, complexity/rarity of words, sentence count, letter count,
+        ##  syllable count, gunning-fog index, flesch score
+        ##
+        def self.nine_feature( args )
+       
+            ##  Sentence count first, then loop through sentences adding /new/ words 
+            ##  to the 'unique_words' array.
+            puts "Generating 9-feature set statistics on #{@@data[:top_authors].count} authors"
 
-            
+            ## Going to push different author stats (type Hash) into this array
+            @@data[:stats] = Array.new
 
+            @@data[:top_authors].each do |a|
+
+                ## We will push this onto @@data[:authors]
+                author_data = Hash.new
+                author_data[:id] = a
+
+                sentences = IO.read( a ).force_encoding("ISO-8859-1").encode("utf-8", replace: nil ).split(/[.!?]/)
+                author_data[:sentence_count] = sentences.count
+
+                sentences.each do |sen|
+                end
+
+                @@data[:stats].push author_data
+            end
+
+            @@data
         end
 
 
@@ -207,7 +244,7 @@ stats  = CStyl::Analysis.new
 #                                :db_name => "htd0rg"  } } )
 
 
-pp stats.generate( :style => "nine_feature" )
+pp stats.generate( :style => "nine_feature", :args => nil )[:stats]
 
     ##  corpus  = CStyl::Corpus.new
     ##  stats   = CStyl::Analysis.new
