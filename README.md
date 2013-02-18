@@ -17,9 +17,8 @@ pp stats.generate( :style => "nine_feature" )[:stats]
 
 
 
-┌[gift@hercales] [/dev/pts/0] [master ⚡] 
+[~/code/ruby/cstyl]$ ruby style.rb
 
-└[~/code/ruby/cstyl]> ruby style.rb
 Generating 9-feature set statistics on 29 authors
 [{:id=>"corpus/3/d/3def184ad8f4755ff269862ea77393dd", :sentence_count=>2378},
  {:id=>"corpus/3/8/38ca89564b2259401518960f7a06f94b", :sentence_count=>3984},
