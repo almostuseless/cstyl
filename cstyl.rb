@@ -166,6 +166,19 @@ module CStyl
         end
 
 
+        ##
+        ##  syllable_count = count_syllables("lolocaust")
+        ##
+        def self.num_syllables(word)
+            word.downcase!
+            return 1 if word.length <= 3
+
+            word.sub!(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '')
+            word.sub!(/^y/, '')
+            word.scan(/[aeiouy]{1,2}/).size
+        end
+
+
         ##  9-Feature set
         ##  Unique words, complexity/rarity of words, sentence count, letter count,
         ##  syllable count, gunning-fog index, flesch score
@@ -185,19 +198,20 @@ module CStyl
             @@data[:top_authors].each do |a|
 
                 ## We will push this onto @@data[:authors]
-                author_data                 = Hash.new
 
-                ## Placeholders
-                author_data[:id]            = a
-                author_data[:letter_count]  = 0
-                author_data[:word_count]    = 0
+                author_data = { :id => a, :letter_count => 0,
+                                :word_count => 0, :syllable_count => 0 }
 
                 sentences = IO.read( a ).force_encoding("ISO-8859-1").encode("utf-8", replace: nil ).split(/[.!?]/)
                 author_data[:sentence_count] = sentences.count
 
                 sentences.each do |sen|
-                    author_data[:word_count]    += sen.split(/\s+/).count
-                    author_data[:letter_count]  += sen.scan(/\S/).count
+                    author_data[:word_count]        += sen.split(/\s+/).count
+                    author_data[:letter_count]      += sen.scan(/\S/).count
+   
+                    sen.split(/[ ,]/).each do |w|
+                        author_data[:syllable_count]   += self.num_syllables( w )
+                    end
                 end
 
                 @@data[:stats].push author_data
