@@ -45,8 +45,6 @@ module CStyl
         
         def generate( opts )
 
-            pp opts
-
             type = opts.fetch :type
             args = opts.fetch :args
 
@@ -107,20 +105,33 @@ module CStyl
     end
 
 
-    class Analyzer
+    
+    ##  corpus  = CStyl::Corpus.new
+    ##  stats   = CStyl::Analysis.new
+    ##
+    ##  corpus.generate(...)
+    ##  stats.generate( :style => "nine_feature" )
+    ##
+    ##  pp stats => { :unique_words => 0, :complexity => 0, :sentence_count => 0,
+    ##                :letter_count => 0, :syllable_count => 0, :gunning_fog => 0, 
+    ##                :flesch_score => 0 }
+    ##
+    class Analysis
         
         attr_accessor :method, :records
         @@records = Array.new()
 
-        ## records      = CStyl.create_records( ["bucket1", "bucket2", "bucket3"], 4 )
-        ## analysis     = CStyl::Analyzer.new( "wi" )   
-        def initialize( args )
-            pp args
-            @method     = args[:method] if args[:method]
+        def generate( opts )
+            style = opts.fetch :style
+            args  = opts.fetch :args
+            CStyl::Analysis.send( style.to_sym, args )
         end
 
-        def self.run
-            CStyl::Analyzer.send( @method.to_sym )
+
+        def self.nine_feature
+
+            
+
         end
 
 
@@ -186,12 +197,25 @@ module CStyl
 end
 
 
-corpus = CStyl::Corpus.new
+#corpus = CStyl::Corpus.new
+stats  = CStyl::Analysis.new
 
-pp corpus
+#corpus.generate( :type => "phpbb", :args => {
+#                    :db => {    :user => "roobay",
+#                                :pass => "butts",
+#                                :host => "localhost",
+#                                :db_name => "htd0rg"  } } )
 
-corpus.generate( :type => "phpbb", :args => {
-                    :db => {    :user => "roobay",
-                                :pass => "butts",
-                                :host => "localhost",
-                                :db_name => "htd0rg"  } } )
+
+pp stats.generate( :style => "nine_feature" )
+
+    ##  corpus  = CStyl::Corpus.new
+    ##  stats   = CStyl::Analysis.new
+    ##
+    ##  corpus.generate(...)
+    ##  stats.generate( :style => "nine_feature" )
+    ##
+    ##  pp stats => { :unique_words => 0, :complexity => 0, :sentence_count => 0,
+    ##                :letter_count => 0, :syllable_count => 0, :gunning_fog => 0, 
+    ##                :flesch_score => 0 }
+    ##
