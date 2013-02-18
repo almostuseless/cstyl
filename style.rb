@@ -1,5 +1,35 @@
 #!/usr/bin/env ruby
 
+=begin
+
+    Copyright (c) 2013, almostuseless
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+        * Redistributions of source code must retain the above copyright
+          notice, this list of conditions and the following disclaimer.
+        * Redistributions in binary form must reproduce the above copyright
+          notice, this list of conditions and the following disclaimer in the
+          documentation and/or other materials provided with the distribution.
+        * Neither almostuseless nor the
+          names of its contributors may be used to endorse or promote products
+          derived from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL almostuseless BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+=end
+
+
 require 'rubygems'
 require 'pp'
 require 'digest/md5'
@@ -58,15 +88,31 @@ module CStyl
                     %x{ mkdir -p #{ path } }
                 end
 
-                ##  Make this a comprehensive method
-                ##  Normalization and classification/removal of unuseable substrings
-                chunk[:text].gsub!(/\[(code|url|quote):([^\]]+?)\].*?\[\/\1:\2\]/,"")
+
+                ##  Normalization
+                ##
+                ##  Make this a comprehensive method for nrmalization and 
+                ##  classification/removal of unuseable substrings
+                
+                ##  remove code/link/quote/etc tags from the posts
+                ##  Example: [code:kfj293] <source here.. forever and ever .. until> [/code:kfj293] 
+                chunk[:text].gsub!(/\[(\w+):([^\]]+?)\].*?\[\/\1:\2\]/,"")
+            
+                ## Fuck all links, cant use them
+                chunk[:text].gsub!(/http\S+/,"")
+
+                ##  Escaped newlines (not sure where they come from but they're there sometimes)
                 chunk[:text].gsub!(/\\[rn]/,"")
+                
+                ## Actual Newlines and spaces
                 chunk[:text].gsub!(/[\r\n]/,"")
                 chunk[:text].gsub!(/\s+/," ")
-                chunk[:text].gsub!(/http\S+/,"")
+        
+                ## Comments and other actual html tags
                 chunk[:text].gsub!(/<!--.*?-->/,"")
                 chunk[:text].gsub!(/<(?:a|img) .*?\/>/,"")
+
+                ## People use "..." alot for some fucking reason
                 chunk[:text].gsub!(/\.\.+/,".")
 
                 next unless chunk[:text].split(/\s/).count >= 10
