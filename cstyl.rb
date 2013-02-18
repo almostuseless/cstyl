@@ -153,7 +153,7 @@ module CStyl
 
         def generate( opts )
 
-            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n4 | head -n3 |awk '{ print $2 }' }.split(/\n/)
+            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n35 | head -n34 |awk '{ print $2 }' }.split(/\n/)
 
             if @@data[:top_authors].count == 0
                 puts "Error, only got #{@data[:top_authors]} authors.  Check your corpus"
@@ -203,6 +203,10 @@ module CStyl
                 ## Split bucket into 50 chunks, run below functions on each
                 ## then return the averages.  expirement with give/take limits
                 ## for comparisons.
+
+
+
+
 
                 ## We will push this onto @@data[:authors]
 
@@ -256,17 +260,6 @@ module CStyl
 
             mcw.sort{ |a,b| a[1] <=> b[1] }.reverse
         end
-    end
-
-
-    ## Ripped this out at e57312e3a3b8762fe7dc719cd5d5c45311af8e9b
-    ## 
-    module Bucket
-    end
-
-    ## Ripped this out at e57312e3a3b8762fe7dc719cd5d5c45311af8e9b
-    ## 
-    class Record
     end
 
 end
