@@ -27,7 +27,7 @@ Example usage
 
 Example output
 --------------
-    [gift@hercales cstyl]$ ruby testing.rb 
+    [gift@heracles cstyl]$ ruby testing.rb 
     ----------------------
             PPHPBB
     ----------------------
