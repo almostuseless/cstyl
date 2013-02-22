@@ -72,7 +72,7 @@ module CStyl
 
             mysql = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
 
-            rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 10")
+            rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 50")
 
             pb = ProgressBar.create(:title => "Handling #{rs.num_rows} rows", :starting_at => 0, :total => rs.num_rows )
 
