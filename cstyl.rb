@@ -100,10 +100,11 @@ module CStyl
                 ##  Make this a comprehensive method for nrmalization and 
                 ##  classification/removal of unuseable substrings
                 
-                ##  remove code/link/quote/etc tags from the posts
-                ##  Example: [code:kfj293] <source here.. forever and ever .. until> [/code:kfj293] 
-                chunk[:text].gsub!(/\[(\w+):([^\]]+?)\].*?\[\/\1:\2\]/,"")
-            
+
+
+                ##  strip non-printables
+                chunk[:text].gsub!(/[^[:print:]]/,"")
+
                 ## Fuck all links, cant use them
                 chunk[:text].gsub!(/http\S+/,"")
 
@@ -124,10 +125,23 @@ module CStyl
                 next unless chunk[:text].split(/\s/).count >= 10
                 
                 File.open( "#{path}/#{chunk[:id]}", "a+" ) { |f| f.write "#{chunk[:text]}\n" }
+
+
                 
                 pb.increment
             end
 
+            files = %x{ find ./corpus/*/*/* }.split(/\n/)
+            print "\n"
+            pb = ProgressBar.create(:title => "Normalizing #{files.count} buckets", :starting_at => 0, :total => files.count )
+
+            files.each do |f|
+
+                ##  remove code/link/quote/etc tags from the posts
+                ##  Example: [code:kfj293] <source here.. forever and ever .. until> [/code:kfj293] 
+                %x{ sed -i 's/\[\([a-z]*\).*:\([a-z0-9]*\)\].*\[\/\1:\2\]//g' #{f} }
+                pb.increment
+            end
         end
     end
 
@@ -258,9 +272,10 @@ module CStyl
                 mcw[string] += 1
             end
 
+            ## remove empty strings
             mcw.delete_if { |k,v| k == "" }
 
-        
+            ## sort the data, highest occurances first, and hash them        
             Hash[ mcw.sort { |a,b| -1*(a[1] <=> b[1]) }[0..limit] ]
         end
     end
