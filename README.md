@@ -1,6 +1,5 @@
 Example usage
--------------
-
+------------- 
     #!/usr/bin/env ruby
 
     require_relative './cstyl.rb'
@@ -19,7 +18,6 @@ Example usage
 
     res = stats.generate( :style => "nine_feature", :args => { :count => 4 } )
     puts res[:stats].to_yaml
-
 
 Example output
 --------------
@@ -85,4 +83,3 @@ Example output
         that: 2416
         for: 2213
       :flesch_score: 4.400000000000002
-

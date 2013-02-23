@@ -15,5 +15,6 @@ corpus.generate( :type => "phpbb", :args => {
 #=end
 
 res = stats.generate( :style => "nine_feature", :args => { :count => 4 } )
+
 puts res[:stats].to_yaml
 
