@@ -6,7 +6,7 @@ Example usage
     require_relative './cstyl.rb'
 
 
-    corpus = CStyl::Corpus.new
+    #corpus = CStyl::Corpus.new
     stats  = CStyl::Analysis.new
 
     #=begin
@@ -14,12 +14,11 @@ Example usage
                         :db => {    :user => "roobay",
                                     :pass => "butts",
                                     :host => "localhost",
-                                    :db_name => "some_phpbb_db"  } } )
+                                    :db_name => "some_php_db"  } } )
     #=end
 
-    stats.generate( :style => "nine_feature", :args => nil )[:stats].each do |a|
-        puts a.to_yaml
-    end
+    res = stats.generate( :style => "nine_feature", :args => { :count => 4 } )
+    puts res[:stats].to_yaml
 
 
 Example output
