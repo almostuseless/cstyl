@@ -1,5 +1,6 @@
 Example usage
 -------------
+
     #!/usr/bin/env ruby
 
     require_relative './cstyl.rb'
