@@ -38,7 +38,7 @@ require 'mechanize'
 require 'mysql'
 require 'ruby-progressbar'
 require 'yaml'
-
+require 'active_support/secure_random'
 
 module CStyl
 
@@ -68,9 +68,9 @@ module CStyl
             puts "        PPHPBB"
             puts "----------------------"
 
-            db = args.fetch :db
-
-            mysql = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
+            db      = args.fetch :db
+            count   = args.fetch :count
+            mysql   = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
 
             rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 50")
 
@@ -83,7 +83,7 @@ module CStyl
 
                 ## need to make a id_number => md5 map somewhere to keep this from
                 ## running 50 times for the same row[0] value
-                chunk[:id]      = Digest::MD5.hexdigest row[0]
+                chunk[:id]      = Digest::MD5.hexdigest( row[0] )
                 chunk[:sub]     = row[1]
                 chunk[:text]    = row[2]
 
@@ -169,8 +169,8 @@ module CStyl
         end
 
         def generate( opts )
-
-            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n6 | head -n5 |awk '{ print $2 }' }.split(/\n/)
+            count = opts[:args].fetch :count
+            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n#{count + 1} | head -n#{count} |awk '{ print $2 }' }.split(/\n/)
 
             if @@data[:top_authors].count == 0
                 puts "Error, only got #{@data[:top_authors]} authors.  Check your corpus"
@@ -208,9 +208,7 @@ module CStyl
             ## Going to push different author stats (type Hash) into this array
             @@data[:stats] = Array.new
     
-            puts
-            sleep(0.1)
-            pb = ProgressBar.create(    :title => "Analyzing #{@@data[:top_authors].count} authors", 
+            pb = ProgressBar.create(    :title => "Analyzing top #{@@data[:top_authors].count} buckets", 
                                         :starting_at => 0, :total => @@data[:top_authors].count )
             @@data[:top_authors].each do |a|
 
