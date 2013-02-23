@@ -140,6 +140,9 @@ module CStyl
                 ##  remove code/link/quote/etc tags from the posts
                 ##  Example: [code:kfj293] <source here.. forever and ever .. until> [/code:kfj293] 
                 %x{ sed -i 's/\[\([a-z]*\).*:\([a-z0-9]*\)\].*\[\/\1:\2\]//g' #{f} }
+                %x{ sed -i 's/&quot;/"/g' #{f} }
+                %x{ sed -i 's/&lt;/</g' #{f} }
+                %x{ sed -i 's/&gt;/>/g' #{f} }
                 pb.increment
             end
         end
