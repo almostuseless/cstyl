@@ -37,7 +37,7 @@ require 'thread'
 require 'mechanize'
 require 'mysql'
 require 'ruby-progressbar'
-
+require 'yaml'
 
 
 module CStyl
@@ -153,7 +153,7 @@ module CStyl
 
         def generate( opts )
 
-            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n35 | head -n34 |awk '{ print $2 }' }.split(/\n/)
+            @@data[:top_authors] = %x{ wc -l corpus/*/*/* | sort  |tail -n6 | head -n5 |awk '{ print $2 }' }.split(/\n/)
 
             if @@data[:top_authors].count == 0
                 puts "Error, only got #{@data[:top_authors]} authors.  Check your corpus"
@@ -197,16 +197,13 @@ module CStyl
                                         :starting_at => 0, :total => @@data[:top_authors].count )
             @@data[:top_authors].each do |a|
 
-
-
                 ## FUCKING DO ME FIRST
                 ## Split bucket into 50 chunks, run below functions on each
                 ## then return the averages.  expirement with give/take limits
                 ## for comparisons.
 
 
-
-
+                
 
                 ## We will push this onto @@data[:authors]
 
@@ -227,6 +224,11 @@ module CStyl
 
                 end
 
+
+                ## Get 50 most common words
+                author_data[:common_words] = get_tokens( a.to_s, 10 )
+
+
                 ##  The result is a number that corresponds with a grade level. For example, a 
                 ##  score of 8.2 would indicate that the text is expected to be understandable 
                 ##  by an average student in eighth grade (usually around ages 12–14 in the 
@@ -245,20 +247,21 @@ module CStyl
         end
 
 
-        ## get_tokens( record.id ) 
-        def self.get_tokens( rid )
+        ##  get_tokens( author_file ) 
+        def self.get_tokens( input, limit = 50 )
+        
+            tokens = IO.read( input ).force_encoding("ISO-8859-1").encode("utf-8", replace: nil ).downcase.split(/[\d\W]/)
 
             mcw     = Hash.new(0)       # most common word
-
-            record_file = IO.read("./records/#{rid}.txt").downcase
-
-            tokens = record_file.scan(/\w+/)
 
             for string in tokens
                 mcw[string] += 1
             end
 
-            mcw.sort{ |a,b| a[1] <=> b[1] }.reverse
+            mcw.delete_if { |k,v| k == "" }
+
+        
+            Hash[ mcw.sort { |a,b| -1*(a[1] <=> b[1]) }[0..limit] ]
         end
     end
 
