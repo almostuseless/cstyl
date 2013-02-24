@@ -41,6 +41,22 @@ require 'ruby-progressbar'
 require 'yaml'
 require 'active_support/secure_random'
 
+
+class String
+    def hline
+        print "+"
+        print self * ( %x{stty size | cut -d" " -f2}.to_i - 2 )
+        puts "+"
+    end
+end
+
+def termwidth
+    return #{stty size | cut -d" " -f2}.to_i
+end
+
+
+
+
 module CStyl
 
     ##
@@ -63,19 +79,15 @@ module CStyl
         ## Will have to validate arguments at some point
         def phpbb( args )
 
-
-
-            puts "----------------------"
-            puts "        PPHPBB"
-            puts "----------------------"
+            puts "\n\t\t\tCStyl -- phpbb analysis"
+            "-".hline
 
             db      = args.fetch :db
-            count   = args.fetch :count
             mysql   = Mysql.new( db[:host], db[:user], db[:pass], db[:db_name] )
 
             rs = mysql.query("select poster_id,post_subject,post_text from phpbb_posts where length(post_text) - length( replace( post_text, ' ', '')) > 50")
 
-            pb = ProgressBar.create(:title => "Handling #{rs.num_rows} rows", :starting_at => 0, :total => rs.num_rows )
+            pb = ProgressBar.create(:title => "| Handling #{rs.num_rows} rows", :starting_at => 0, :total => rs.num_rows )
 
             rs.num_rows.times do 
                 row   = rs.fetch_row
@@ -134,7 +146,7 @@ module CStyl
 
             files = %x{ find ./corpus/*/*/* }.split(/\n/)
             print "\n"
-            pb = ProgressBar.create(:title => "Normalizing #{files.count} buckets", :starting_at => 0, :total => files.count )
+            pb = ProgressBar.create(:title => "| Normalizing #{files.count} buckets", :starting_at => 0, :total => files.count )
 
             files.each do |f|
 
@@ -164,9 +176,8 @@ module CStyl
         attr_accessor :data, :analysis
 
         def initialize
-            @@data               = Hash.new
-            @@analysis           = Array.new
-
+            @@data              = Hash.new
+            @@analysis          = Array.new
         end
 
         def generate( opts )
@@ -209,7 +220,7 @@ module CStyl
             ## Going to push different author stats (type Hash) into this array
             @@data[:stats] = Array.new
     
-            pb = ProgressBar.create(    :title => "Analyzing top #{@@data[:top_authors].count} buckets", 
+            pb = ProgressBar.create(    :title => "| Analyzing top #{@@data[:top_authors].count} buckets", 
                                         :starting_at => 0, :total => @@data[:top_authors].count )
             @@data[:top_authors].each do |a|
 
@@ -242,7 +253,7 @@ module CStyl
 
 
                 ## Get 50 most common words
-                author_data[:common_words] = get_tokens( a.to_s, 10 )
+                author_data[:common_words] = get_tokens( a.to_s, 50 )
 
 
                 ##  The result is a number that corresponds with a grade level. For example, a 
@@ -254,12 +265,26 @@ module CStyl
 
                 author_data[:flesch_score] = 0.39 * ( author_data[:word_count] / author_data[:sentence_count] ) + 11.8 * ( author_data[:syllable_count] / author_data[:word_count] ) - 15.59
 
-                @@data[:stats].push author_data
+
+                md5 = author_data[:id].gsub!(/^.*\//,"")
+                
+                dirs = md5.match(/^(?<first>.)(?<second>.)/)
+                path = File.join( "./reports/", dirs['first'], dirs['second'] )
+
+                unless File.directory?( path )
+                    %x{ mkdir -p #{ path } }
+                end
+
+                ##  Create a record file for future comparison 
+                File.open( "#{path}/#{md5}", "w" ) { |f| f.write author_data.to_yaml }
 
                 pb.increment
             end
 
-            @@data
+            "-".hline
+            puts "\n\n"
+
+            @@data[:top_authors]
         end
 
 
@@ -274,8 +299,11 @@ module CStyl
                 mcw[string] += 1
             end
 
-            ## remove empty strings
-            mcw.delete_if { |k,v| k == "" }
+            ##  Filter out useless words.
+            mcw.delete_if do |k,v|
+                [   "quote", "about", "would", "there", "which", "people"
+                ].include? k or k.length < 5
+            end
 
             ## sort the data, highest occurances first, and hash them        
             Hash[ mcw.sort { |a,b| -1*(a[1] <=> b[1]) }[0..limit] ]
