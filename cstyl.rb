@@ -117,9 +117,9 @@ module CStyl
 
                 ##  strip non-printables
                 chunk[:text].gsub!(/[^[:print:]]/,"")
-
+                
                 ## Fuck all links, cant use them
-                chunk[:text].gsub!(/http\S+/,"")
+                chunk[:text].gsub!(/http:\/\/\S+/,"")
 
                 ##  Escaped newlines (not sure where they come from but they're there sometimes)
                 chunk[:text].gsub!(/\\[rn]/,"")
@@ -132,9 +132,9 @@ module CStyl
                 chunk[:text].gsub!(/<!--.*?-->/,"")
                 chunk[:text].gsub!(/<(?:a|img) .*?\/>/,"")
 
-                ## People use "..." alot for some fucking reason
-                chunk[:text].gsub!(/\.\.+/,".")
-
+                chunk[:text].gsub!(/[^\w\s]/," ")
+                chunk[:text].gsub!(/\s\s+/," ")
+                
                 next unless chunk[:text].split(/\s/).count >= 10
                 
                 File.open( "#{path}/#{chunk[:id]}", "a+" ) { |f| f.write "#{chunk[:text]}\n" }
@@ -230,41 +230,89 @@ module CStyl
                 ## for comparisons.
 
 
-                
-
                 ## We will push this onto @@data[:authors]
 
                 author_data = { :id => a, :letter_count => 0,
                                 :word_count => 0, :syllable_count => 0 }
 
-                sentences = IO.read( a ).force_encoding("ISO-8859-1").encode("utf-8", replace: nil ).split(/[.!?]/)
-                author_data[:sentence_count] = sentences.count
+                chunk_data_collector = []
 
-                sentences.each do |sen|
-                    author_data[:word_count]        += sen.split(/\s+/).count
-                    author_data[:letter_count]      += sen.scan(/\S/).count
-   
-                    sen.split(/[ ,]/).each do |w|
-                        author_data[:syllable_count]   += self.num_syllables( w )
+                ##  Split the authors file into 500 word chunks
+                ##
+                chunks = IO.read( a ).force_encoding("ISO-8859-1").encode("utf-8", replace: nil )
+                chunks = chunks.scan(/((?:\b\w+\b\s*){500})/)
+
+                puts "Chunks: #{chunks.count}"
+
+                chunks.each do |c|
+                    pp chunk
+                    puts "\n\n\n\n\n\n#####################################################################\n\n\n\n\n"
+
+                    chunk_data = { :id => a, :letter_count => 0,
+                                :word_count => 0, :syllable_count => 0 }
+
+                    chunk_data[:word_count]        += c.split(/\s+/).count
+                    chunk_data[:letter_count]      += c.scan(/\S/).count
+
+                    sentences = c.split(/[.!?]/)
+                    chunk_data[:sentence_count] = sentences.count
+
+                    sentences.each do |sen|
+                        sen.split(/[ ,]/).each do |w|
+                            chunk_data[:syllable_count]   += self.num_syllables( w )
+                        end
                     end
 
 
+
+                    ## Get 50 most common words
+                    chunk_data[:common_words] = get_tokens( a.to_s, 50 )
+
+
+                    ##  The result is a number that corresponds with a grade level. For example, a 
+                    ##  score of 8.2 would indicate that the text is expected to be understandable 
+                    ##  by an average student in eighth grade (usually around ages 12–14 in the 
+                    ##  United States of America). The sentence, "The Australian platypus is seemingly 
+                    ##  a hybrid of a mammal and reptilian creature" is a 13.1 as it has 26 syllables 
+                    ##  and 13 words.
+                    pp author_data[:id]
+                    p author_data[:word_count].class
+                    pp author_data[:word_count]
+                    p author_data[:sentence_count].class
+                    pp author_data[:sentence_count]
+
+                    chunk_data[:flesch_score] = 0.39 * ( author_data[:word_count] / author_data[:sentence_count] ) + 11.8 
+                    chunk_data[:flesch_score] = chunk_data[:flesch_score] * ( author_data[:syllable_count] / author_data[:word_count] ) - 15.59
+
+
+
+                    chunk_data_collector.push chunk_data
+                end
+                
+                ## chunk_data_collector
+                # a = [ { :a => 1, :b => 2 }, { :a => 4, :b => 6 }, { :a => 5, :b => 8 } ]
+
+                ## collect sums
+                sums = chunk_data_collector.each_with_object( { flesch_score: 0, 
+                        common_words: 0, unique_words: 0, complexity: 0, sentence_count: 0,
+                        letter_count: 0, syllable_count: 0, gunning_fog: 0 } ) do |hsh, sums| 
+
+                    sums[:flesch_score] += hsh[:flesch_score]
+                    sums[:common_words] += hsh[:common_words]
+                    sums[:letter_count] += hsh[:letter_count]
+                    sums[:syllable_count] += hsh[:syllable_count]
+                    sums[:gunning_fog] += hsh[:gunning_fog]
+                    sums[:unique_words] += hsh[:unique_words]
+                    sums[:complexity] += hsh[:complexity]
+                    sums[:sentence_count] += hsh[:sentence_count]
                 end
 
-
-                ## Get 50 most common words
-                author_data[:common_words] = get_tokens( a.to_s, 50 )
-
-
-                ##  The result is a number that corresponds with a grade level. For example, a 
-                ##  score of 8.2 would indicate that the text is expected to be understandable 
-                ##  by an average student in eighth grade (usually around ages 12–14 in the 
-                ##  United States of America). The sentence, "The Australian platypus is seemingly 
-                ##  a hybrid of a mammal and reptilian creature" is a 13.1 as it has 26 syllables 
-                ##  and 13 words.
-
-                author_data[:flesch_score] = 0.39 * ( author_data[:word_count] / author_data[:sentence_count] ) + 11.8 * ( author_data[:syllable_count] / author_data[:word_count] ) - 15.59
-
+                # iterate through sums and calculate averages
+                sums.map{ |k,v| [ k, v / chunk_data_collector.size ] }.each do |a|
+                    # 0 => :key
+                    # 1 => \d
+                    author_data[a[0]] = a[1]
+                end
 
                 md5 = author_data[:id].gsub!(/^.*\//,"")
                 

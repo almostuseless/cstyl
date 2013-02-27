@@ -3,15 +3,15 @@
 require_relative './cstyl.rb'
 
 
-corpus = CStyl::Corpus.new
+#corpus = CStyl::Corpus.new
 stats  = CStyl::Analysis.new
 
 #=begin
-corpus.generate( :type => "phpbb", :args => {
-                    :db => {    :user => "roobay",
-                                :pass => "butts",
-                                :host => "localhost",
-                                :db_name => "some_phpbb_db"  } } )
+#corpus.generate( :type => "phpbb", :args => {
+#                    :db => {    :user => "roobay",
+#                                :pass => "butts",
+#                                :host => "localhost",
+#                                :db_name => "htd0rg"  } } )
 #=end
 
 
