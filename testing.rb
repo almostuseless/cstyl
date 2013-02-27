@@ -11,7 +11,7 @@ stats  = CStyl::Analysis.new
 #                    :db => {    :user => "roobay",
 #                                :pass => "butts",
 #                                :host => "localhost",
-#                                :db_name => "htd0rg"  } } )
+#                                :db_name => "some_phpbb_db"  } } )
 #=end
 
 
