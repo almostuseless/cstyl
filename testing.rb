@@ -25,3 +25,4 @@ stats.count.times do |n|
     puts "  (#{n+1}/#{stats.count}) Generated report for #{stats[n]}"
 end
 
+
